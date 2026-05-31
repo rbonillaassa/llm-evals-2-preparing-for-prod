@@ -32,11 +32,16 @@ session_id = f"session-{uuid.uuid4().hex[:8]}"
 users = ["James", "George", "Mike", "Sherlock"]
 user_id = users[uuid.uuid4().int % len(users)]
 
+# LiteLLM end-user identifier — attached to every request so the proxy
+# can apply customer-level budgets and rate limits (see task 4).
+LITELLM_USER = os.getenv("LITELLM_USER", "HyperUser")
+
 # Initialize the LLM with OpenAI API credentials (substitute for other models)
 llm = ChatOpenAI(
     model=os.getenv("OPENAI_MODEL"),
     base_url=os.getenv("OPENAI_BASE_URL"),
-    api_key=os.getenv("OPENAI_API_KEY")
+    api_key=os.getenv("OPENAI_API_KEY"),
+    model_kwargs={"user": LITELLM_USER},
 )
 
 # Initialize the embeddings model with OpenAI API credentials
@@ -44,7 +49,8 @@ embeddings_model = OpenAIEmbeddings(
     model=os.getenv("OPENAI_EMBEDDINGS_MODEL"),
     base_url=os.getenv("OPENAI_BASE_URL"),
     api_key=os.getenv("OPENAI_API_KEY"),
-    show_progress_bar=True
+    show_progress_bar=True,
+    model_kwargs={"user": LITELLM_USER},
 )
 
 # Initialize Langfuse client
@@ -274,6 +280,7 @@ def main():
         model="gpt-4",
         base_url=os.getenv("OPENAI_BASE_URL"),
         api_key=os.getenv("OPENAI_API_KEY"),
+        model_kwargs={"user": LITELLM_USER},
     )
     rails_config = RailsConfig.from_path("config/")
     input_rails = RunnableRails(rails_config, llm=rail_llm, input_key="user_input")
